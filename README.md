@@ -1,2 +1,2 @@
-# HTLM
-page web HTLM
+# HTML
+page web au format htlm
