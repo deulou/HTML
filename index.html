@@ -27,11 +27,11 @@
     color: var(--blue-deep);
     min-height: 100vh;
     line-height: 1.6;
-    display: flex;
+    display: block;
     align-items: center;
     justify-content: center;
-    padding: clamp(1rem, 4vw, 3rem);
-    padding-top: max(clamp(1rem, 4vw, 3rem), env(safe-area-inset-top, 0px));
+    padding: clamp(1rem, 1vw, 3rem);
+    /*padding-top: max(clamp(1rem, 4vw, 3rem), env(safe-area-inset-top, 0px));*/
     padding-bottom: max(clamp(1rem, 4vw, 3rem), env(safe-area-inset-bottom, 0px));
   }
 
@@ -302,10 +302,26 @@
     color: var(--grey);
   }
   footer strong { color: var(--blue-deep); }
+
+  .avertissement{
+    color:black;
+    width: 100%;
+    max-width: 880px;
+    height: 50p;
+    margin-bottom: 5px;
+    text-align: center;
+  }
+  .avertissement p{
+    margin: auto;
+  }
 </style>
 </head>
 <body>
-<p><strong>Payefort</strong> — 100% gratuit, sans contenu payant.</p>
+
+<div class="avertissement">
+    <p><strong>Payefort</strong> — 100% gratuit, sans contenu payant.</p>
+</div> 
+  
 <div class="card">
 
   <header class="top">
