@@ -1,2 +1,5 @@
-# HTML
-page web au format htlm
+# BIENVENUE
+
+Readme !
+
+<a href="index.html">PAYFORT</a>
