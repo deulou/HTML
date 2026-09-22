@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Payefort</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #1849D6;
+    --blue-deep: #0F1B3D;
+    --yellow: #FFCE1F;
+    --yellow-deep: #8A6600;
+    --cream: #F7F4EC;
+    --grey: #6B7280;
+    --line: #D8D3C4;
+    --red: #C23B3B;
+    --green: #4CAF6D;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--cream); overflow-x: hidden; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--blue-deep);
+    min-height: 100vh;
+    line-height: 1.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(1rem, 4vw, 3rem);
+    padding-top: max(clamp(1rem, 4vw, 3rem), env(safe-area-inset-top, 0px));
+    padding-bottom: max(clamp(1rem, 4vw, 3rem), env(safe-area-inset-bottom, 0px));
+  }
+
+  .card {
+    width: 100%;
+    max-width: 880px;
+    border: 2px solid var(--blue-deep);
+    border-radius: 22px;
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+    background: white;
+  }
+
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding-bottom: clamp(1.5rem, 4vw, 2.25rem);
+  }
+  .top svg { width: 36px; height: 36px; flex-shrink: 0; }
+  .top span {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    letter-spacing: 0.02em;
+  }
+
+  .layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    align-items: flex-start;
+  }
+
+  .panel { flex: 1 1 240px; }
+
+  h2 {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--blue);
+    margin-bottom: 0.9rem;
+  }
+  h2 .optional {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: var(--grey);
+  }
+
+  /* --- le jeu --- */
+  .game-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.7rem;
+  }
+  .game-head h2 { margin-bottom: 0; }
+  .best-score {
+    font-size: 0.82rem;
+    color: var(--grey);
+  }
+  .best-score strong { color: var(--blue-deep); }
+
+  .game-frame {
+    position: relative;
+    border: 2px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(#FDF9EE 0%, #FDF9EE 80%, #E7F3E9 80%, #E7F3E9 100%);
+    max-width: 320px;
+    margin: 0 auto;
+    touch-action: none;
+  }
+  #gameCanvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .hud {
+    position: absolute;
+    top: 8px; left: 10px; right: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--blue-deep);
+    pointer-events: none;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.8rem;
+    padding: 1.5rem;
+  }
+  .overlay h3 {
+    font-family: 'Baloo 2', sans-serif;
+    color: var(--blue);
+    font-size: 1.2rem;
+  }
+  .overlay p { color: var(--grey); font-size: 0.9rem; }
+  .overlay[hidden] { display: none; }
+
+  button.primary {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 999px;
+    padding: 0.65rem 1.6rem;
+    cursor: pointer;
+    transition: background 150ms ease;
+  }
+  button.primary:hover { background: #1339AD; }
+
+  .touch-controls {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    margin-top: 0.9rem;
+  }
+  .touch-controls button {
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 50%;
+    border: none;
+    background: var(--yellow);
+    color: var(--yellow-deep);
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .touch-controls button:active { background: #E8BC10; }
+  .hint {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--grey);
+    margin-top: 0.6rem;
+  }
+
+  /* --- la roue (optionnelle) --- */
+  .wheel-panel { text-align: center; }
+  .wheel-wrap {
+    position: relative;
+    width: min(60vw, 170px);
+    aspect-ratio: 1;
+    margin: 0 auto 1.1rem;
+  }
+  .pointer {
+    position: absolute;
+    top: -5px; left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 15px solid var(--blue-deep);
+    z-index: 2;
+  }
+  .wheel {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    position: relative;
+    background: conic-gradient(
+      var(--yellow) 0deg 36deg, var(--blue) 36deg 72deg,
+      var(--yellow) 72deg 108deg, var(--blue) 108deg 144deg,
+      var(--yellow) 144deg 180deg, var(--blue) 180deg 216deg,
+      var(--yellow) 216deg 252deg, var(--blue) 252deg 288deg,
+      var(--yellow) 288deg 324deg, var(--blue) 324deg 360deg
+    );
+    box-shadow: 0 0 0 5px var(--cream), 0 0 0 7px var(--blue-deep);
+    transition: transform 3.2s cubic-bezier(0.15, 0.85, 0.15, 1);
+    transform: rotate(0deg);
+  }
+  .wheel-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 22%; height: 22%;
+    background: var(--blue-deep);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+  }
+  .wheel-num {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 22px; height: 22px;
+    margin: -11px 0 0 -11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+  }
+  .wheel-num.on-yellow { color: var(--blue-deep); }
+  .wheel-num.on-blue { color: #FDF9EE; }
+  .code-row {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: center;
+    margin-bottom: 0.8rem;
+  }
+  .code-row input {
+    width: 2rem;
+    height: 2.4rem;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    border: 1.5px solid var(--line);
+    border-radius: 7px;
+    background: white;
+    color: var(--blue-deep);
+  }
+  .code-row input:focus {
+    outline: 2px solid var(--blue);
+    outline-offset: 1px;
+    border-color: var(--blue);
+  }
+  .error-msg {
+    color: var(--red);
+    font-size: 0.8rem;
+    min-height: 1.1rem;
+    margin-bottom: 0.4rem;
+  }
+  button.spin {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 999px;
+    padding: 0.6rem 1.5rem;
+    cursor: pointer;
+    transition: background 150ms ease;
+  }
+  button.spin:hover { background: #1339AD; }
+  button.spin:disabled { background: #A9B6D9; cursor: not-allowed; }
+  .result {
+    margin-top: 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    min-height: 1.3rem;
+  }
+  .disclaimer {
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--grey);
+  }
+
+  footer {
+    padding-top: clamp(1.5rem, 4vw, 2.25rem);
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--grey);
+  }
+  footer strong { color: var(--blue-deep); }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <header class="top">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="100" cy="100" r="96" fill="var(--blue)"/>
+      <g fill="var(--yellow)">
+        <ellipse cx="96" cy="128" rx="46" ry="34"/>
+        <circle cx="66" cy="78" r="23"/>
+        <path d="M50 74 L26 78 L50 84 Z"/>
+        <path d="M92 92 C 142 84, 176 96, 180 130 C 158 122, 132 122, 108 130 Z"/>
+        <path d="M108 152 C 92 170, 84 182, 76 186 C 88 178, 96 166, 104 154 Z"/>
+        <path d="M124 154 C 124 172, 128 182, 136 188 C 130 176, 128 164, 130 154 Z"/>
+      </g>
+      <circle cx="60" cy="76" r="3" fill="var(--blue)"/>
+    </svg>
+    <span>PAYEFORT</span>
+  </header>
+
+  <div class="layout">
+
+    <div class="panel">
+      <div class="game-head">
+        <h2>Le jeu</h2>
+        <div class="best-score">Meilleur : <strong id="bestScore">0</strong> 🥕</div>
+      </div>
+
+      <div class="game-frame">
+        <canvas id="gameCanvas" width="300" height="380"></canvas>
+        <div class="hud">
+          <span id="scoreHud">🥕 0</span>
+          <span id="livesHud">❤️❤️❤️</span>
+        </div>
+
+        <div class="overlay" id="startOverlay">
+          <h3>Le lapin a faim</h3>
+          <p>Déplace-le avec les flèches (ou les boutons) pour attraper les carottes.</p>
+          <button class="primary" id="startBtn">Jouer</button>
+        </div>
+
+        <div class="overlay" id="overOverlay" hidden>
+          <h3>Partie terminée</h3>
+          <p id="finalScoreText">Score : 0</p>
+          <button class="primary" id="retryBtn">Rejouer</button>
+        </div>
+      </div>
+
+      <div class="touch-controls">
+        <button id="leftBtn" aria-label="Gauche">◀</button>
+        <button id="rightBtn" aria-label="Droite">▶</button>
+      </div>
+      <p class="hint">Le meilleur score est sauvegardé sur cet appareil.</p>
+    </div>
+
+    <div class="panel wheel-panel">
+      <h2>La roue <span class="optional">(optionnelle)</span></h2>
+
+      <div class="wheel-wrap">
+        <div class="pointer"></div>
+        <div class="wheel" id="wheel">
+          <span class="wheel-num on-yellow" style="transform: rotate(18deg) translateY(-56px) rotate(-18deg);">0</span>
+          <span class="wheel-num on-blue" style="transform: rotate(54deg) translateY(-56px) rotate(-54deg);">1</span>
+          <span class="wheel-num on-yellow" style="transform: rotate(90deg) translateY(-56px) rotate(-90deg);">2</span>
+          <span class="wheel-num on-blue" style="transform: rotate(126deg) translateY(-56px) rotate(-126deg);">3</span>
+          <span class="wheel-num on-yellow" style="transform: rotate(162deg) translateY(-56px) rotate(-162deg);">4</span>
+          <span class="wheel-num on-blue" style="transform: rotate(198deg) translateY(-56px) rotate(-198deg);">5</span>
+          <span class="wheel-num on-yellow" style="transform: rotate(234deg) translateY(-56px) rotate(-234deg);">6</span>
+          <span class="wheel-num on-blue" style="transform: rotate(270deg) translateY(-56px) rotate(-270deg);">7</span>
+          <span class="wheel-num on-yellow" style="transform: rotate(306deg) translateY(-56px) rotate(-306deg);">8</span>
+          <span class="wheel-num on-blue" style="transform: rotate(342deg) translateY(-56px) rotate(-342deg);">9</span>
+          <div class="wheel-center"></div>
+        </div>
+      </div>
+
+      <div class="code-row" id="codeRow">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="Chiffre 1">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="Chiffre 2">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="Chiffre 3">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="Chiffre 4">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="Chiffre 5">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="Chiffre 6">
+      </div>
+      <div class="error-msg" id="errorMsg"></div>
+
+      <button class="spin" id="spinBtn">Tourner la roue</button>
+      <div class="result" id="resultMsg"></div>
+      <p class="disclaimer">Essai gratuit, sans gain réel.</p>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  <p><strong>Payefort</strong> — 100% gratuit, sans contenu payant.</p>
+</footer>
+
+<script>
+/* ---------- Roue (inchangée) ---------- */
+(function () {
+  var inputs = Array.prototype.slice.call(document.querySelectorAll('#codeRow input'));
+  var wheel = document.getElementById('wheel');
+  var spinBtn = document.getElementById('spinBtn');
+  var errorMsg = document.getElementById('errorMsg');
+  var resultMsg = document.getElementById('resultMsg');
+  var totalRotation = 0;
+  var spinning = false;
+
+  inputs.forEach(function (input, i) {
+    input.addEventListener('input', function () {
+      input.value = input.value.replace(/[^0-9]/g, '').slice(0, 1);
+      if (input.value && inputs[i + 1]) inputs[i + 1].focus();
+      errorMsg.textContent = '';
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Backspace' && !input.value && inputs[i - 1]) {
+        inputs[i - 1].focus();
+      }
+    });
+  });
+
+  spinBtn.addEventListener('click', function () {
+    if (spinning) return;
+    var code = inputs.map(function (i) { return i.value; }).join('');
+    if (code.length !== 6) {
+      errorMsg.textContent = 'Entre les 6 chiffres avant de tourner.';
+      return;
+    }
+    errorMsg.textContent = '';
+    resultMsg.textContent = '';
+    spinning = true;
+    spinBtn.disabled = true;
+    totalRotation += 3600 + 360;
+    wheel.style.transform = 'rotate(' + totalRotation + 'deg)';
+    setTimeout(function () {
+      resultMsg.textContent = 'La roue retombe sur 0 — retente ta chance quand tu veux.';
+      spinning = false;
+      spinBtn.disabled = false;
+    }, 3300);
+  });
+})();
+
+/* ---------- Jeu : le lapin ramasse des carottes ---------- */
+(function () {
+  var canvas = document.getElementById('gameCanvas');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  var groundY = H - 46;
+  var rabbit = { w: 46, h: 34, x: W / 2 - 23, y: groundY - 34, speed: 260 };
+  var moveLeft = false, moveRight = false;
+  var carrots = [];
+  var spawnTimer = 0;
+  var spawnInterval = 1100;
+  var fallSpeed = 110;
+  var score = 0;
+  var lives = 3;
+  var state = 'idle'; // idle | playing | over
+  var lastTime = null;
+  var rafId = null;
+
+  var STORAGE_KEY = 'payefort-rabbit-best-score';
+
+  function loadBest() {
+    try {
+      var v = window.localStorage.getItem(STORAGE_KEY);
+      return v ? parseInt(v, 10) || 0 : 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+  function saveBest(v) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, String(v));
+    } catch (e) {
+      /* stockage indisponible : on continue sans sauvegarder */
+    }
+  }
+
+  var bestScoreEl = document.getElementById('bestScore');
+  var scoreHud = document.getElementById('scoreHud');
+  var livesHud = document.getElementById('livesHud');
+  var startOverlay = document.getElementById('startOverlay');
+  var overOverlay = document.getElementById('overOverlay');
+  var finalScoreText = document.getElementById('finalScoreText');
+  var startBtn = document.getElementById('startBtn');
+  var retryBtn = document.getElementById('retryBtn');
+  var leftBtn = document.getElementById('leftBtn');
+  var rightBtn = document.getElementById('rightBtn');
+
+  var best = loadBest();
+  bestScoreEl.textContent = best;
+
+  function updateHud() {
+    scoreHud.textContent = '🥕 ' + score;
+    livesHud.textContent = '❤️'.repeat(Math.max(lives, 0)) + '🖤'.repeat(Math.max(3 - lives, 0));
+  }
+
+  function drawGround() {
+    ctx.fillStyle = '#E7F3E9';
+    ctx.fillRect(0, groundY + rabbit.h, W, H - (groundY + rabbit.h));
+  }
+
+  function drawRabbit() {
+    var x = rabbit.x, y = rabbit.y, w = rabbit.w, h = rabbit.h;
+    ctx.save();
+    ctx.fillStyle = '#F7F4EC';
+    ctx.strokeStyle = '#0F1B3D';
+    ctx.lineWidth = 2;
+
+    // oreilles
+    ctx.beginPath();
+    ctx.ellipse(x + w * 0.3, y - h * 0.35, w * 0.11, h * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(x + w * 0.7, y - h * 0.35, w * 0.11, h * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+
+    // corps
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + h * 0.55, w * 0.5, h * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+
+    // yeux
+    ctx.fillStyle = '#0F1B3D';
+    ctx.beginPath();
+    ctx.arc(x + w * 0.4, y + h * 0.45, 2.4, 0, Math.PI * 2);
+    ctx.arc(x + w * 0.62, y + h * 0.45, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // museau
+    ctx.fillStyle = '#F2A6B0';
+    ctx.beginPath();
+    ctx.arc(x + w * 0.51, y + h * 0.58, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawCarrot(c) {
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.fillStyle = '#F2994A';
+    ctx.strokeStyle = '#8A4A11';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-8, -10);
+    ctx.lineTo(8, -10);
+    ctx.lineTo(0, 16);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#4CAF6D';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-4, -10); ctx.lineTo(-6, -18);
+    ctx.moveTo(0, -10); ctx.lineTo(0, -19);
+    ctx.moveTo(4, -10); ctx.lineTo(6, -18);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function spawnCarrot() {
+    carrots.push({ x: 20 + Math.random() * (W - 40), y: -20, speed: fallSpeed + Math.random() * 40 });
+  }
+
+  function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + ah && ay + ah > by;
+  }
+
+  function resetGame() {
+    rabbit.x = W / 2 - rabbit.w / 2;
+    carrots = [];
+    spawnTimer = 0;
+    spawnInterval = 1100;
+    fallSpeed = 110;
+    score = 0;
+    lives = 3;
+    updateHud();
+  }
+
+  function startGame() {
+    resetGame();
+    state = 'playing';
+    startOverlay.hidden = true;
+    overOverlay.hidden = true;
+    lastTime = null;
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function endGame() {
+    state = 'over';
+    cancelAnimationFrame(rafId);
+    if (score > best) {
+      best = score;
+      saveBest(best);
+      bestScoreEl.textContent = best;
+    }
+    finalScoreText.textContent = 'Score : ' + score + '  (Meilleur : ' + best + ')';
+    overOverlay.hidden = false;
+  }
+
+  function loop(ts) {
+    if (lastTime === null) lastTime = ts;
+    var dt = Math.min((ts - lastTime) / 1000, 0.05);
+    lastTime = ts;
+
+    // déplacement lapin
+    if (moveLeft) rabbit.x -= rabbit.speed * dt;
+    if (moveRight) rabbit.x += rabbit.speed * dt;
+    rabbit.x = Math.max(4, Math.min(W - rabbit.w - 4, rabbit.x));
+
+    // apparition des carottes
+    spawnTimer += dt * 1000;
+    if (spawnTimer >= spawnInterval) {
+      spawnTimer = 0;
+      spawnCarrot();
+      spawnInterval = Math.max(550, spawnInterval - 12);
+      fallSpeed += 1.5;
+    }
+
+    // mise à jour des carottes
+    for (var i = carrots.length - 1; i >= 0; i--) {
+      var c = carrots[i];
+      c.y += c.speed * dt;
+
+      var caught = rectsOverlap(
+        rabbit.x, rabbit.y, rabbit.w, rabbit.h,
+        c.x - 8, c.y - 10, 16, 26
+      );
+      if (caught) {
+        carrots.splice(i, 1);
+        score++;
+        updateHud();
+        continue;
+      }
+      if (c.y - 10 > groundY + rabbit.h) {
+        carrots.splice(i, 1);
+        lives--;
+        updateHud();
+        if (lives <= 0) {
+          endGame();
+          return;
+        }
+      }
+    }
+
+    // rendu
+    ctx.clearRect(0, 0, W, H);
+    drawGround();
+    carrots.forEach(drawCarrot);
+    drawRabbit();
+
+    if (state === 'playing') rafId = requestAnimationFrame(loop);
+  }
+
+  // rendu initial (avant de jouer)
+  ctx.clearRect(0, 0, W, H);
+  drawGround();
+  drawRabbit();
+
+  // contrôles clavier
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft = true;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight = true;
+  });
+  window.addEventListener('keyup', function (e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight = false;
+  });
+
+  // contrôles tactiles / souris
+  function bindHold(btn, onDown, onUp) {
+    btn.addEventListener('touchstart', function (e) { e.preventDefault(); onDown(); }, { passive: false });
+    btn.addEventListener('touchend', function (e) { e.preventDefault(); onUp(); }, { passive: false });
+    btn.addEventListener('mousedown', onDown);
+    btn.addEventListener('mouseup', onUp);
+    btn.addEventListener('mouseleave', onUp);
+  }
+  bindHold(leftBtn, function () { moveLeft = true; }, function () { moveLeft = false; });
+  bindHold(rightBtn, function () { moveRight = true; }, function () { moveRight = false; });
+
+  startBtn.addEventListener('click', startGame);
+  retryBtn.addEventListener('click', startGame);
+})();
+</script>
+
+</body>
+</html>
